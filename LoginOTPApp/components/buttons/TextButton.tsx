@@ -8,32 +8,43 @@ type TextButtonProps = {
   onPress: () => void;
   type?: 'link' | 'checkbox';
   checked?: boolean;
+  disabled?: boolean; // Adicionado
 };
 
-export default function TextButton({ title, onPress, type = 'link', checked = false }: TextButtonProps) {
+export default function TextButton({ 
+  title, 
+  onPress, 
+  type = 'link', 
+  checked = false,
+  disabled = false 
+}: TextButtonProps) {
   if (type === 'checkbox') {
     return (
-      <TouchableOpacity style={styles.checkboxContainer} onPress={onPress}>
+      <TouchableOpacity 
+        style={styles.checkboxContainer} 
+        onPress={onPress}
+        disabled={disabled}
+      >
         <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
           {checked && <Ionicons name="checkmark" size={14} color={colors.white} />}
         </View>
-        <Text style={styles.checkboxText}>{title}</Text>
+        <Text style={[styles.checkboxText, disabled && styles.disabled]}>{title}</Text>
       </TouchableOpacity>
     );
   }
 
   return (
-    <TouchableOpacity onPress={onPress}>
-      <Text style={styles.linkText}>{title}</Text>
+    <TouchableOpacity onPress={onPress} disabled={disabled}>
+      <Text style={[styles.linkText, disabled && styles.disabled]}>{title}</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   checkboxContainer: {
-    flexDirection: 'row' as 'row',
-    alignItems: 'center' as 'center',
-  } as ViewStyle,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   checkbox: {
     width: 18,
     height: 18,
@@ -41,20 +52,23 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.5)',
     borderRadius: 3,
     marginRight: 8,
-    justifyContent: 'center' as 'center',
-    alignItems: 'center' as 'center',
-  } as ViewStyle,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   checkboxChecked: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
-  } as ViewStyle,
+  },
   checkboxText: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: 14,
-  } as TextStyle,
+  },
   linkText: {
     color: '#9bf0e1',
     fontSize: 14,
-    textDecorationLine: 'underline' as 'underline',
-  } as TextStyle,
+    textDecorationLine: 'underline',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
 });

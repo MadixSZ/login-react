@@ -8,9 +8,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/');
+  };
 
   return (
     <ImageBackground 
@@ -23,15 +30,15 @@ export default function HomeScreen() {
           <Ionicons name="checkmark-circle" size={80} color="#2ecc71" />
           <Text style={styles.successTitle}>Login Bem-Sucedido!</Text>
           <Text style={styles.subtitle}>
-            Bem-vindo ao sistema! Seu acesso foi autorizado.
+            Bem-vindo ao sistema!{user?.email ? `\nLogado como: ${user.email}` : ''}
           </Text>
           
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
               style={styles.primaryButton} 
-              onPress={() => router.replace('/')}
+              onPress={handleLogout}
             >
-              <Text style={styles.buttonText}>Voltar ao Login</Text>
+              <Text style={styles.buttonText}>Sair</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -72,6 +79,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     marginBottom: 30,
     textAlign: 'center',
+    lineHeight: 20,
   },
   buttonContainer: {
     width: '100%',

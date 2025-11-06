@@ -6,12 +6,14 @@ type EmailInputProps = {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
+  autoFocus?: boolean; // Adicionado
 };
 
 export default function EmailInput({ 
   value, 
   onChangeText, 
-  placeholder = "Seu e-mail ou telefone" 
+  placeholder = "Seu e-mail ou telefone",
+  autoFocus = false // Adicionado
 }: EmailInputProps) {
   return (
     <TextInput
@@ -20,6 +22,7 @@ export default function EmailInput({
       placeholderTextColor={colors.textSecondary}
       keyboardType="email-address"
       autoCapitalize="none"
+      autoFocus={autoFocus} // Adicionado
       value={value}
       onChangeText={onChangeText}
     />

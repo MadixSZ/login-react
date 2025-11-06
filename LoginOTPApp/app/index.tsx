@@ -2,323 +2,211 @@ import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  TextInput, 
-  TouchableOpacity, 
   Alert, 
-  StyleSheet,
-  ImageBackground,
-  ScrollView
+  StyleSheet, 
+  ScrollView 
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+
+import Background from '../components/ui/Background';
+import Container from '../components/ui/Container';
+import Card from '../components/layout/Card';
+import Title from '../components/texts/Title';
+import Subtitle from '../components/texts/Subtitle';
+import EmailInput from '../components/inputs/EmailInput';
+import PasswordInput from '../components/inputs/PasswordInput';
+import PrimaryButton from '../components/buttons/PrimaryButton';
+import TextButton from '../components/buttons/TextButton';
+import { AuthService } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../constants/theme';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
-  const [recoveryCode, setRecoveryCode] = useState('');
-  const [generatedCode, setGeneratedCode] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [loginError, setLoginError] = useState(''); // Estado para erro de login
   const router = useRouter();
+  const { user } = useAuth();
 
-  // Usuários válidos para teste (seu professor pode usar qualquer um)
-  const validUsers = [
-    { email: 'professor@escola.com', password: '123456' },
-    { email: 'admin@teste.com', password: 'senha123' },
-    { email: 'teste@teste.com', password: 'teste123' }
-  ];
+  React.useEffect(() => {
+    if (user) {
+      router.replace('/home' as any);
+    }
+  }, [user]);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    // Limpar erro anterior
+    setLoginError('');
+    
     if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      setLoginError('Por favor, preencha todos os campos.');
       return;
     }
 
-    // Validação simples de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Erro', 'Por favor, digite um e-mail válido.');
+      setLoginError('Por favor, digite um e-mail válido.');
       return;
     }
 
     setLoading(true);
+    const result = await AuthService.login(email, password);
+    setLoading(false);
 
-    // Simular verificação
-    setTimeout(() => {
-      const user = validUsers.find(u => u.email === email && u.password === password);
-      
-      if (user) {
-        router.replace('/home');
-      } else {
-        Alert.alert('Erro', 'E-mail ou senha incorretos.');
-      }
-      setLoading(false);
-    }, 1500);
+    if (result.success) {
+      router.replace('/home' as any);
+    } else {
+      // Mostrar erro diretamente na tela
+      setLoginError(result.error);
+    }
   };
 
-  const handleRecovery = () => {
+  const handlePasswordReset = async () => {
     if (!email) {
       Alert.alert('Erro', 'Por favor, digite seu e-mail.');
       return;
     }
 
-    // Gerar código de 6 dígitos
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(code);
-    
-    Alert.alert(
-      'Código de Recuperação', 
-      `Seu código é: ${code}\n\nUse este código para recuperar sua senha.`
-    );
-  };
+    setLoading(true);
+    const result = await AuthService.sendPasswordReset(email);
+    setLoading(false);
 
-  const handleVerifyRecovery = () => {
-    if (recoveryCode !== generatedCode) {
-      Alert.alert('Erro', 'Código inválido. Tente novamente.');
-      return;
+    if (result.success) {
+      Alert.alert(
+        'Email Enviado!', 
+        result.message,
+        [{ text: 'OK', onPress: () => setIsRecovery(false) }]
+      );
+    } else {
+      Alert.alert('Erro', result.error);
     }
-
-    Alert.alert('Sucesso', 'Código verificado! Sua senha foi redefinida para "123456".');
-    setIsRecovery(false);
-    setRecoveryCode('');
-    setGeneratedCode('');
-  };
-
-  const handleBackToLogin = () => {
-    setIsRecovery(false);
-    setRecoveryCode('');
   };
 
   // TELA DE RECUPERAÇÃO DE SENHA
   if (isRecovery) {
     return (
-      <ImageBackground 
-        source={require('../assets/images/fundo.jpg')} 
-        style={styles.background}
-        resizeMode="cover"
-      >
+      <Background>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.container}>
-            <View style={styles.card}>
-              <TouchableOpacity style={styles.backButton} onPress={handleBackToLogin}>
-                <Ionicons name="arrow-back" size={24} color="white" />
-                <Text style={styles.backText}>Voltar</Text>
-              </TouchableOpacity>
-
-              <Text style={styles.title}>Recuperar Senha</Text>
-              <Text style={styles.subtitle}>
-                Digite o código enviado para seu e-mail
-              </Text>
-
-              <TextInput
-                style={styles.input}
-                placeholder="Código de 6 dígitos"
-                placeholderTextColor="rgba(255,255,255,0.6)"
-                value={recoveryCode}
-                onChangeText={setRecoveryCode}
-                keyboardType="numeric"
-                maxLength={6}
+          <Container>
+            <Card>
+              <TextButton 
+                title="← Voltar para o login" 
+                onPress={() => setIsRecovery(false)} 
               />
 
-              <TouchableOpacity 
-                style={styles.button}
-                onPress={handleVerifyRecovery}
-              >
-                <Text style={styles.buttonText}>Verificar Código</Text>
-              </TouchableOpacity>
+              <Title>Recuperar Senha</Title>
+              <Subtitle>
+                Digite seu email para receber um link de recuperação
+              </Subtitle>
 
-              <TouchableOpacity 
-                style={styles.secondaryButton}
-                onPress={handleRecovery}
-              >
-                <Text style={styles.secondaryButtonText}>Reenviar Código</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+              <EmailInput 
+                value={email}
+                onChangeText={setEmail}
+                placeholder="seu@email.com"
+              />
+
+              <PrimaryButton 
+                title={loading ? "Enviando..." : "Enviar Link de Recuperação"} 
+                onPress={handlePasswordReset}
+                loading={loading}
+                disabled={loading}
+              />
+
+              <View style={styles.note}>
+                <Text style={styles.noteText}>
+                  📧 Verifique sua caixa de entrada e a pasta de SPAM.
+                </Text>
+              </View>
+            </Card>
+          </Container>
         </ScrollView>
-      </ImageBackground>
+      </Background>
     );
   }
 
   // TELA DE LOGIN NORMAL
   return (
-    <ImageBackground 
-      source={require('../assets/images/fundo.jpg')} 
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <Background>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          <View style={styles.card}>
-            <Text style={styles.title}>Entrar na sua conta</Text>
-            <Text style={styles.subtitle}>Use suas credenciais para acessar o sistema</Text>
+        <Container>
+          <Card>
+            <Title>Entrar na sua conta</Title>
+            <Subtitle>
+              Use suas credenciais para acessar o sistema
+            </Subtitle>
 
-            <TextInput
-              style={styles.input}
-              placeholder="seu@exemplo.com"
-              placeholderTextColor="rgba(255,255,255,0.6)"
+            <EmailInput 
               value={email}
               onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
+              placeholder="seu@email.com"
             />
 
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Sua senha"
-                placeholderTextColor="rgba(255,255,255,0.6)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
+            <PasswordInput 
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Sua senha"
+            />
+
+            {/* MOSTRAR ERRO DE LOGIN DIRETAMENTE NA TELA */}
+            {loginError ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{loginError}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.optionsRow}>
+              <TextButton 
+                title="Lembrar de mim"
+                type="checkbox"
+                checked={rememberMe}
+                onPress={() => setRememberMe(!rememberMe)}
               />
-              <TouchableOpacity 
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons 
-                  name={showPassword ? 'eye-off' : 'eye'} 
-                  size={20} 
-                  color="rgba(255,255,255,0.6)" 
-                />
-              </TouchableOpacity>
+              
+              <TextButton 
+                title="Esqueceu a senha?"
+                onPress={() => setIsRecovery(true)}
+              />
             </View>
 
-            <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]}
+            <PrimaryButton 
+              title={loading ? "Entrando..." : "Entrar"} 
               onPress={handleLogin}
+              loading={loading}
               disabled={loading}
-            >
-              {loading ? (
-                <Text style={styles.buttonText}>Entrando...</Text>
-              ) : (
-                <Text style={styles.buttonText}>Entrar</Text>
-              )}
-            </TouchableOpacity>
+            />
 
-            <TouchableOpacity onPress={() => setIsRecovery(true)}>
-              <Text style={styles.forgotText}>Esqueceu a senha?</Text>
-            </TouchableOpacity>
+            <PrimaryButton 
+              title="Criar uma conta"
+              onPress={() => router.push('/signup' as any)}
+              type="secondary"
+            />
 
             <View style={styles.credentials}>
-              <Text style={styles.credentialsTitle}>Credenciais para teste:</Text>
-              <Text style={styles.credential}>professor@escola.com / 123456</Text>
-              <Text style={styles.credential}>admin@teste.com / senha123</Text>
-              <Text style={styles.credential}>teste@teste.com / teste123</Text>
+              <Text style={styles.credentialsTitle}>💡 Para testar:</Text>
+              <Text style={styles.credential}>1. Crie uma conta nova</Text>
+              <Text style={styles.credential}>2. Verifique seu email (inclusive SPAM)</Text>
+              <Text style={styles.credential}>3. Faça login com email e senha</Text>
             </View>
-          </View>
-        </View>
+          </Card>
+        </Container>
       </ScrollView>
-    </ImageBackground>
+    </Background>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: '100%',
-  },
   scrollContainer: {
     flexGrow: 1,
   },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: 'rgba(0,0,0,0.7)', 
-    borderRadius: 15,
-    padding: 30,
-    alignItems: 'center',
-  },
-  backButton: {
+  optionsRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    width: '100%',
     marginBottom: 20,
-  },
-  backText: {
-    color: 'white',
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'rgba(255,255,255,0.15)', 
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    color: 'white',
-    fontSize: 16,
-  },
-  passwordContainer: {
-    width: '100%',
-    position: 'relative',
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
-    padding: 5,
-  },
-  button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#7c25f8',
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  secondaryButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'transparent',
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#7c25f8',
-  },
-  secondaryButtonText: {
-    color: '#7c25f8',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  forgotText: {
-    color: '#9bf0e1',
-    fontSize: 14,
-    textDecorationLine: 'underline',
   },
   credentials: {
     marginTop: 30,
@@ -328,15 +216,40 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   credentialsTitle: {
-    color: 'white',
+    color: colors.textPrimary,
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
   },
   credential: {
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textSecondary,
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 4,
+  },
+  note: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+  },
+  noteText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#e74c3c',
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
