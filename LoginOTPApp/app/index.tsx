@@ -16,13 +16,15 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState('');
   const router = useRouter();
 
-  // Usuários válidos para teste
+  // Usuários válidos para teste (seu professor pode usar qualquer um)
   const validUsers = [
-    { email: 'user@example.com', password: '123456' },
+    { email: 'professor@escola.com', password: '123456' },
     { email: 'admin@teste.com', password: 'senha123' },
     { email: 'teste@teste.com', password: 'teste123' }
   ];
@@ -49,16 +51,97 @@ export default function LoginScreen() {
       if (user) {
         router.replace('/home');
       } else {
-        router.replace('/error');
+        Alert.alert('Erro', 'E-mail ou senha incorretos.');
       }
       setLoading(false);
     }, 1500);
   };
 
-  const handleSocialLogin = (provider: string) => {
-    Alert.alert('Login Social', `Login com ${provider} em desenvolvimento...`);
+  const handleRecovery = () => {
+    if (!email) {
+      Alert.alert('Erro', 'Por favor, digite seu e-mail.');
+      return;
+    }
+
+    // Gerar código de 6 dígitos
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedCode(code);
+    
+    Alert.alert(
+      'Código de Recuperação', 
+      `Seu código é: ${code}\n\nUse este código para recuperar sua senha.`
+    );
   };
 
+  const handleVerifyRecovery = () => {
+    if (recoveryCode !== generatedCode) {
+      Alert.alert('Erro', 'Código inválido. Tente novamente.');
+      return;
+    }
+
+    Alert.alert('Sucesso', 'Código verificado! Sua senha foi redefinida para "123456".');
+    setIsRecovery(false);
+    setRecoveryCode('');
+    setGeneratedCode('');
+  };
+
+  const handleBackToLogin = () => {
+    setIsRecovery(false);
+    setRecoveryCode('');
+  };
+
+  // TELA DE RECUPERAÇÃO DE SENHA
+  if (isRecovery) {
+    return (
+      <ImageBackground 
+        source={require('../assets/images/fundo.jpg')} 
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.container}>
+            <View style={styles.card}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBackToLogin}>
+                <Ionicons name="arrow-back" size={24} color="white" />
+                <Text style={styles.backText}>Voltar</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.title}>Recuperar Senha</Text>
+              <Text style={styles.subtitle}>
+                Digite o código enviado para seu e-mail
+              </Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Código de 6 dígitos"
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                value={recoveryCode}
+                onChangeText={setRecoveryCode}
+                keyboardType="numeric"
+                maxLength={6}
+              />
+
+              <TouchableOpacity 
+                style={styles.button}
+                onPress={handleVerifyRecovery}
+              >
+                <Text style={styles.buttonText}>Verificar Código</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.secondaryButton}
+                onPress={handleRecovery}
+              >
+                <Text style={styles.secondaryButtonText}>Reenviar Código</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </ImageBackground>
+    );
+  }
+
+  // TELA DE LOGIN NORMAL
   return (
     <ImageBackground 
       source={require('../assets/images/fundo.jpg')} 
@@ -74,7 +157,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="seu@exemplo.com"
-              placeholderTextColor="rgba(255,255,255,0.5)"
+              placeholderTextColor="rgba(255,255,255,0.6)"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -85,7 +168,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Sua senha"
-                placeholderTextColor="rgba(255,255,255,0.5)"
+                placeholderTextColor="rgba(255,255,255,0.6)"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -97,24 +180,8 @@ export default function LoginScreen() {
                 <Ionicons 
                   name={showPassword ? 'eye-off' : 'eye'} 
                   size={20} 
-                  color="rgba(255,255,255,0.5)" 
+                  color="rgba(255,255,255,0.6)" 
                 />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.row}>
-              <TouchableOpacity 
-                style={styles.rememberContainer}
-                onPress={() => setRememberMe(!rememberMe)}
-              >
-                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                  {rememberMe && <Ionicons name="checkmark" size={14} color="white" />}
-                </View>
-                <Text style={styles.rememberText}>Lembrar-me</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity>
-                <Text style={styles.forgotText}>Esqueceu a senha?</Text>
               </TouchableOpacity>
             </View>
 
@@ -130,35 +197,15 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>ou entrar com</Text>
-              <View style={styles.dividerLine} />
-            </View>
+            <TouchableOpacity onPress={() => setIsRecovery(true)}>
+              <Text style={styles.forgotText}>Esqueceu a senha?</Text>
+            </TouchableOpacity>
 
-            <View style={styles.socialButtons}>
-              <TouchableOpacity 
-                style={styles.socialButton}
-                onPress={() => handleSocialLogin('Google')}
-              >
-                <Ionicons name="logo-google" size={20} color="#DB4437" />
-                <Text style={[styles.socialText, { color: '#DB4437' }]}>Google</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.socialButton}
-                onPress={() => handleSocialLogin('Facebook')}
-              >
-                <Ionicons name="logo-facebook" size={20} color="#4267B2" />
-                <Text style={[styles.socialText, { color: '#4267B2' }]}>Facebook</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Não tem conta? </Text>
-              <TouchableOpacity>
-                <Text style={styles.signupLink}>Criar conta</Text>
-              </TouchableOpacity>
+            <View style={styles.credentials}>
+              <Text style={styles.credentialsTitle}>Credenciais para teste:</Text>
+              <Text style={styles.credential}>professor@escola.com / 123456</Text>
+              <Text style={styles.credential}>admin@teste.com / senha123</Text>
+              <Text style={styles.credential}>teste@teste.com / teste123</Text>
             </View>
           </View>
         </View>
@@ -184,10 +231,21 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 400,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(0,0,0,0.7)', 
     borderRadius: 15,
     padding: 30,
     alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  backText: {
+    color: 'white',
+    marginLeft: 8,
+    fontSize: 16,
   },
   title: {
     fontSize: 24,
@@ -198,19 +256,19 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.8)',
     marginBottom: 30,
     textAlign: 'center',
   },
   input: {
     width: '100%',
     height: 50,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.15)', 
     borderRadius: 8,
     paddingHorizontal: 15,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.3)',
     color: 'white',
     fontSize: 16,
   },
@@ -224,40 +282,6 @@ const styles = StyleSheet.create({
     top: 15,
     padding: 5,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 20,
-  },
-  rememberContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 3,
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#7c25f8',
-    borderColor: '#7c25f8',
-  },
-  rememberText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-  },
-  forgotText: {
-    color: '#9bf0e1',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
   button: {
     width: '100%',
     height: 50,
@@ -266,6 +290,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 10,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -275,51 +300,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  secondaryButton: {
     width: '100%',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  dividerText: {
-    color: 'rgba(255,255,255,0.7)',
-    marginHorizontal: 10,
-    fontSize: 14,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 20,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    height: 50,
+    backgroundColor: 'transparent',
     borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    gap: 8,
+    borderColor: '#7c25f8',
   },
-  socialText: {
-    fontSize: 14,
+  secondaryButtonText: {
+    color: '#7c25f8',
+    fontSize: 16,
     fontWeight: '600',
   },
-  signupContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  signupText: {
-    color: 'rgba(255,255,255,0.7)',
-  },
-  signupLink: {
+  forgotText: {
     color: '#9bf0e1',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  credentials: {
+    marginTop: 30,
+    padding: 15,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    width: '100%',
+  },
+  credentialsTitle: {
+    color: 'white',
     fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  credential: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 4,
   },
 });

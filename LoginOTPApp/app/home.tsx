@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   View, 
   Text, 
-  Alert, 
   StyleSheet, 
   ImageBackground, 
   TouchableOpacity 
@@ -12,10 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeScreen() {
   const router = useRouter();
-
-  const handleContinue = () => {
-    Alert.alert('Próximo passo', 'Navegar para dashboard...');
-  };
 
   return (
     <ImageBackground 
@@ -28,19 +23,15 @@ export default function HomeScreen() {
           <Ionicons name="checkmark-circle" size={80} color="#2ecc71" />
           <Text style={styles.successTitle}>Login Bem-Sucedido!</Text>
           <Text style={styles.subtitle}>
-            Bem-vindo de volta! Você entrou com sucesso em sua conta.
+            Bem-vindo ao sistema! Seu acesso foi autorizado.
           </Text>
           
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleContinue}>
-              <Text style={styles.buttonText}>Continuar</Text>
-            </TouchableOpacity>
-            
             <TouchableOpacity 
-              style={styles.secondaryButton} 
-              onPress={() => router.back()}
+              style={styles.primaryButton} 
+              onPress={() => router.replace('/')}
             >
-              <Text style={styles.secondaryButtonText}>Voltar ao Login</Text>
+              <Text style={styles.buttonText}>Voltar ao Login</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -63,7 +54,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 400,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: 15,
     padding: 30,
     alignItems: 'center',
@@ -78,7 +69,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.8)',
     marginBottom: 30,
     textAlign: 'center',
   },
@@ -94,24 +85,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  secondaryButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'transparent',
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#7c25f8',
-  },
   buttonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  secondaryButtonText: {
-    color: '#7c25f8',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
